@@ -14,7 +14,8 @@ var paths = {
     stylesheets: ['src/css/*'],
     scripts: ['src/js/*.js'],
     imageSource: ['src/images/*'],
-    htmlSource: ['src/*.html']
+    htmlSource: ['src/*.html'],
+    mapsPath: './maps'
 };
 
 gulp.task('image-hero-1440w', function () {
@@ -40,22 +41,21 @@ gulp.task('image-hero-360w', function () {
 
 gulp.task('minify-css', function () {
     return gulp.src(paths.stylesheets)
-        //.pipe(sourcemaps.init())
-        //.pipe(cleanCSS())
-        //.pipe(sourcemaps.write())
+        .pipe(sourcemaps.init())
+        .pipe(cleanCSS())
+        .pipe(sourcemaps.write(paths.mapsPath))
         .pipe(gulp.dest('./build/css'));
 });
 
-// Transpiles to ES5, minifies and concatinates js files and outputs them to build/js/app.js 
+// Transpiles to ES5, minifies and outputs them to build/js/app.js 
 gulp.task('minify-js', function () {
     return gulp.src(paths.scripts)
-        //.pipe(babel({
-        //     presets: ['es2015']
-        //}))
-        //.pipe(sourcemaps.init())
-        //.pipe(uglify())
-        //.pipe(concatify('app.js'))
-        //.pipe(sourcemaps.write())
+        .pipe(babel({
+             presets: ['es2015']
+        }))
+        .pipe(sourcemaps.init())
+        .pipe(uglify())
+        .pipe(sourcemaps.write(paths.mapsPath))
         .pipe(gulp.dest('./build/js/'));
 });
 
