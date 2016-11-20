@@ -415,7 +415,11 @@ var resizePizzas = function (size) {
 
     changeSliderLabel(size);
 
-    // Iterates through pizza elements on the page and changes their widths!
+    // Iterates through pizza elements on the page and changes their widths
+    // Previous version of this function had several performance issues:
+    // - document.querySelectorAll(".randomPizzaContainer") was called every time instead of storing it as a variable
+    // - determineDx(elem, size) was being called on each iteration even though the answer will be the same for each element
+    // - layout calculation followed by style change on next line on every loop
     function changePizzaSizes(size) {
         var newWidth;
         switch (size) {
@@ -428,7 +432,7 @@ var resizePizzas = function (size) {
             default:
                 console.log("bug in sizeSwitcher");
         }
-        var randomPizzas = document.querySelectorAll (".randomPizzaContainer");
+        var randomPizzas = document.getElementsByClassName(".randomPizzaContainer");
         for (var i = 0; i < randomPizzas.length; i++) {
             randomPizzas[i].style.width = newWidth;
         }
@@ -446,8 +450,8 @@ var resizePizzas = function (size) {
 window.performance.mark("mark_start_generating"); // collect timing data
 
 // This for-loop actually creates and appends all of the pizzas when the page loads
+var pizzasDiv = document.getElementById("randomPizzas");
 for (var i = 2; i < 100; i++) {
-    var pizzasDiv = document.getElementById("randomPizzas");
     pizzasDiv.appendChild(pizzaElementGenerator(i));
 }
 
@@ -473,17 +477,43 @@ function logAverageFrame(times) {   // times is the array of User Timing measure
 
 // The following code for sliding background pizzas was pulled from Ilya's demo found at:
 // https://www.igvita.com/slides/2012/devtools-tips-and-tricks/jank-demo.html
-
 // Moves the sliding background pizzas based on scroll position
+var transformTest = true;
 function updatePositions() {
     frame++;
     window.performance.mark("mark_start_frame");
 
     var items = document.querySelectorAll('.mover');
     const scroll = document.body.scrollTop;
-    for (var i = 0; i < items.length; i++) {
-        var phase = Math.sin((scroll / 1250) + (i % 5));
-        items[i].style.left = items[i].basicLeft + 100 * phase + 'px';
+    var phase = [];
+    for (var i = 0; i < 5; i++) {
+        phase.push(Math.sin(scroll / 1250 + i) * 100);
+    }
+    // ATTENTION MARKER!
+    // I can't see a difference between using: 
+    // items[i].style.transform
+    // and
+    // items[i].style.left = items[i].basicLeft + phase[i % 5] + 'px';
+    // is there supposed to be a difference?
+    // how are we supposed to move the background pizzas?
+    // the general advice I keep reading is that we should use .translate instead of .left
+    // however all the examples explaining this involve animation in CSS, 
+    // which we cannot do here because the position is calculated by the scroll position
+    if (transformTest) {
+        for (var i = 0, max = items.length; i < max; i++) {
+            var a = items[i].basicLeft;
+            var b = phase[i % 5];
+            var c = a + b;
+            var d = "translateX(" + b + "px)";
+            items[i].style.transform = d;
+        }
+    } else {
+        // set item.left initial position on page load
+        for (var i = 0, max = items.length; i < max; i++) {
+            var a = items[i].basicLeft;
+            var b = phase[i % 5];
+            items[i].style.left = items[i].basicLeft + phase[i % 5] + 'px';
+        }
     }
 
     // User Timing API to the rescue again. Seriously, it's worth learning.
@@ -496,22 +526,38 @@ function updatePositions() {
     }
 }
 
+function initUpdatePositions() {
+    var items = document.querySelectorAll('.mover');
+    const scroll = document.body.scrollTop;
+    var phases = [];
+    for (var i = 0; i < 5; i++) {
+        phases.push(Math.sin(scroll / 1250 + i) * 100);
+    }
+    for (let i = 0, max = items.length; i < max; i++) {
+        let phase = phases[i % 5];
+        items[i].style.left = items[i].basicLeft + phase + 'px';
+        items[i].style.transform = "translateX(" + phase + "px)";
+    }
+}
+
 // runs updatePositions on scroll
 window.addEventListener('scroll', updatePositions);
 
 // Generates the sliding pizzas when the page loads.
 document.addEventListener('DOMContentLoaded', function placePizzaBackgroundGrid() {
-    var cols = 8;
-    var s = 256;
-    for (var i = 0; i < 200; i++) {
+    var columns = 8;
+    var gapBetweenPizzas = 256;
+    var intViewportHeight = window.innerHeight;
+    var numberOfPizzas = Math.ceil(intViewportHeight / gapBetweenPizzas) * columns;
+    for (var i = 0; i < numberOfPizzas; i++) {
         var elem = document.createElement('img');
         elem.className = 'mover';
         elem.src = "images/pizza.png";
         elem.style.height = "100px";
         elem.style.width = "73.333px";
-        elem.basicLeft = (i % cols) * s;
-        elem.style.top = (Math.floor(i / cols) * s) + 'px';
+        elem.basicLeft = (i % columns) * gapBetweenPizzas;
+        elem.style.top = (Math.floor(i / columns) * gapBetweenPizzas) + 'px';
         document.querySelector("#movingPizzas1").appendChild(elem);
     }
-    updatePositions();
+    initUpdatePositions();
 });
