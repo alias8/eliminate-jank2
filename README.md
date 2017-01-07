@@ -1,7 +1,8 @@
 ## Website Performance Optimization Portfolio Project
 
 ### Getting started
-Run the application from [GitHubPages](https://alias8.github.io/eliminate-jank2/) 
+[Before](http://cameronwp.github.io/udportfolio/) optimisation.
+[After](https://alias8.github.io/eliminate-jank2/) optimisation. 
 
 ### General Optimizations Made:
 - Avoid render-blocking CSS: add media="print" for print.css, inlined minified style.css and google fonts
